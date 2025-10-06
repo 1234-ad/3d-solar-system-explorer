@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Solar System Explorer</title>
+    <title>Advanced 3D Solar System Explorer</title>
+    <meta name="description" content="Immersive 3D solar system with realistic physics, spacecraft missions, and multiple game modes">
+    <meta name="keywords" content="solar system, 3D, space, astronomy, physics, Three.js, interactive">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+    
     <style>
         * {
             margin: 0;
@@ -12,9 +18,10 @@
         }
         
         body {
-            background: #000;
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
             overflow: hidden;
-            font-family: 'Arial', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
         }
         
         #canvas-container {
@@ -23,99 +30,565 @@
             height: 100vh;
         }
         
+        /* Enhanced UI Overlay */
         #ui-overlay {
             position: absolute;
             top: 20px;
             left: 20px;
             z-index: 100;
             color: white;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 20px;
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.85);
+            padding: 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            max-width: 350px;
         }
         
+        #ui-overlay h2 {
+            margin-bottom: 20px;
+            font-size: 24px;
+            background: linear-gradient(45deg, #00d4ff, #ff00d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Planet Info Panel */
         #planet-info {
             position: absolute;
             top: 20px;
             right: 20px;
             z-index: 100;
             color: white;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
-            min-width: 250px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(15px);
+            min-width: 300px;
+            max-width: 400px;
             display: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
         
+        #planet-info h3 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-size: 20px;
+        }
+        
+        /* Enhanced Controls */
         .control-button {
-            background: rgba(255, 255, 255, 0.2);
+            background: linear-gradient(45deg, rgba(0, 212, 255, 0.2), rgba(255, 0, 212, 0.2));
             border: 1px solid rgba(255, 255, 255, 0.3);
             color: white;
-            padding: 8px 16px;
-            margin: 5px;
-            border-radius: 5px;
+            padding: 12px 20px;
+            margin: 8px 4px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .control-button:hover {
-            background: rgba(255, 255, 255, 0.3);
+            background: linear-gradient(45deg, rgba(0, 212, 255, 0.4), rgba(255, 0, 212, 0.4));
             transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
         }
         
+        .control-button:active {
+            transform: translateY(0);
+        }
+        
+        /* Speed Control */
         #speed-control {
-            margin: 10px 0;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         #speed-slider {
-            width: 200px;
-            margin: 0 10px;
+            width: 100%;
+            margin: 10px 0;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            -webkit-appearance: none;
         }
         
+        #speed-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #00d4ff, #ff00d4);
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 212, 255, 0.5);
+        }
+        
+        #speed-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #00d4ff, #ff00d4);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0, 212, 255, 0.5);
+        }
+        
+        /* Loading Screen */
         .loading {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             color: white;
-            font-size: 24px;
+            font-size: 28px;
             z-index: 1000;
+            text-align: center;
+        }
+        
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            margin-left: 20px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #00d4ff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Instructions */
+        .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border-left: 4px solid #00d4ff;
+        }
+        
+        .instructions h4 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+        
+        .instructions p {
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+        
+        /* Camera Mode Buttons */
+        .camera-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 16px;
+            margin: 4px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+        }
+        
+        .camera-btn.active {
+            background: linear-gradient(45deg, #00d4ff, #ff00d4);
+            box-shadow: 0 2px 10px rgba(0, 212, 255, 0.4);
+        }
+        
+        .camera-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+        
+        /* Tool Buttons */
+        .tool-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+        
+        .tool-btn.active {
+            background: linear-gradient(45deg, #00d4ff, #ff00d4);
+            box-shadow: 0 2px 10px rgba(0, 212, 255, 0.4);
+        }
+        
+        .tool-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+        
+        /* Progress Bars */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #ff00d4);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        /* Instrument Panel */
+        .instrument-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .instrument {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .instrument label {
+            font-size: 12px;
+            color: #00d4ff;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        /* Control Buttons Grid */
+        .control-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        /* Achievement Notification */
+        .achievement-notification {
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        .achievement-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .achievement-icon {
+            font-size: 32px;
+        }
+        
+        .achievement-content h4 {
+            margin: 0;
+            font-size: 16px;
+        }
+        
+        .achievement-content p {
+            margin: 5px 0;
+            font-weight: bold;
+        }
+        
+        .achievement-content small {
+            color: rgba(0, 0, 0, 0.7);
+        }
+        
+        /* Planet Labels */
+        .planet-label {
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            font-weight: bold;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            #ui-overlay {
+                max-width: 280px;
+                padding: 15px;
+            }
+            
+            #planet-info {
+                min-width: 250px;
+                max-width: 300px;
+            }
+            
+            .control-button {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+            
+            .instrument-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(45deg, #00d4ff, #ff00d4);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(45deg, #0099cc, #cc0099);
+        }
+        
+        /* Hidden class */
+        .hidden {
+            display: none !important;
+        }
+        
+        /* Stat bars for survival mode */
+        .stat-bar {
+            margin: 10px 0;
+        }
+        
+        .stat-bar label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #00d4ff;
+        }
+        
+        /* Cockpit UI */
+        .cockpit-panel {
+            background: rgba(0, 0, 0, 0.95);
+            border: 2px solid #00d4ff;
+            border-radius: 15px;
+            padding: 20px;
+        }
+        
+        .cockpit-panel h3 {
+            color: #00d4ff;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        /* Game Mode Specific Styles */
+        .exploration-ui, .survival-ui, .racing-ui, .builder-ui, .education-ui, .sandbox-ui {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .exploration-ui h4, .survival-ui h4, .racing-ui h4, .builder-ui h4, .education-ui h4, .sandbox-ui h4 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+        
+        .progress-info p, .survival-stats p {
+            margin: 5px 0;
+            font-size: 13px;
+        }
+        
+        .exploration-objectives ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .exploration-objectives li {
+            margin: 5px 0;
+            font-size: 12px;
+        }
+        
+        /* Game header */
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .mode-selector select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .game-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+        }
+        
+        .game-stats span {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
     <div id="canvas-container">
-        <div class="loading" id="loading">Loading Solar System...</div>
+        <div class="loading" id="loading">
+            🚀 Initializing Advanced Solar System
+        </div>
         
         <div id="ui-overlay">
-            <h2>🚀 Solar System Explorer</h2>
+            <h2>🌌 Solar System Explorer</h2>
+            
             <div id="speed-control">
-                <label>Speed: </label>
+                <label>Animation Speed</label>
                 <input type="range" id="speed-slider" min="0" max="5" step="0.1" value="1">
-                <span id="speed-value">1x</span>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span id="speed-value">1.0x</span>
+                    <small>Real-time simulation</small>
+                </div>
             </div>
-            <button class="control-button" id="reset-camera">Reset View</button>
-            <button class="control-button" id="toggle-orbits">Toggle Orbits</button>
-            <button class="control-button" id="toggle-labels">Toggle Labels</button>
-            <button class="control-button" id="toggle-asteroids">Toggle Asteroids</button>
-            <p style="margin-top: 10px; font-size: 12px;">
-                🖱️ Click & drag to rotate<br>
-                🔍 Scroll to zoom<br>
-                🪐 Click planets for info
-            </p>
+            
+            <div class="control-buttons">
+                <button class="control-button" id="reset-camera">🎯 Reset View</button>
+                <button class="control-button" id="toggle-orbits">🔄 Orbits</button>
+                <button class="control-button" id="toggle-labels">🏷️ Labels</button>
+                <button class="control-button" id="toggle-asteroids">☄️ Asteroids</button>
+                <button class="control-button" id="toggle-physics">⚛️ Physics</button>
+                <button class="control-button" id="launch-mission">🚀 Launch</button>
+            </div>
+            
+            <div class="instructions">
+                <h4>🎮 Controls</h4>
+                <p><strong>Mouse:</strong> Drag to rotate, scroll to zoom</p>
+                <p><strong>Click:</strong> Select planets and objects</p>
+                <p><strong>Space:</strong> Pause/resume simulation</p>
+                <p><strong>R:</strong> Reset camera view</p>
+                <p><strong>F:</strong> Focus on selected object</p>
+                <p><strong>P:</strong> Toggle realistic physics</p>
+                <p><strong>1-3:</strong> Switch camera modes</p>
+            </div>
         </div>
         
         <div id="planet-info">
             <h3 id="planet-name"></h3>
             <p id="planet-description"></p>
             <div id="planet-stats"></div>
+            <div id="orbital-elements" style="margin-top: 15px; font-size: 12px; color: #ccc;"></div>
         </div>
     </div>
     
+    <!-- Three.js and Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="js/main.js"></script>
+    
+    <!-- Main Application (ES6 Modules) -->
+    <script type="module" src="js/main.js"></script>
+    
+    <!-- Fallback for browsers without module support -->
+    <script nomodule>
+        alert('Your browser does not support ES6 modules. Please use a modern browser like Chrome, Firefox, Safari, or Edge.');
+    </script>
+    
+    <!-- Service Worker for PWA functionality -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch(registrationError => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+    </script>
+    
+    <!-- Analytics and Performance Monitoring -->
+    <script>
+        // Performance monitoring
+        window.addEventListener('load', () => {
+            if ('performance' in window) {
+                const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
+                console.log(`Page load time: ${loadTime}ms`);
+                
+                // Monitor FPS
+                let lastTime = performance.now();
+                let frameCount = 0;
+                
+                function monitorFPS() {
+                    const currentTime = performance.now();
+                    frameCount++;
+                    
+                    if (currentTime - lastTime >= 1000) {
+                        const fps = Math.round((frameCount * 1000) / (currentTime - lastTime));
+                        console.log(`FPS: ${fps}`);
+                        frameCount = 0;
+                        lastTime = currentTime;
+                    }
+                    
+                    requestAnimationFrame(monitorFPS);
+                }
+                
+                monitorFPS();
+            }
+        });
+        
+        // Error handling
+        window.addEventListener('error', (event) => {
+            console.error('Global error:', event.error);
+        });
+        
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event.reason);
+        });
+    </script>
 </body>
 </html>
